@@ -267,6 +267,106 @@ interface PrReference {
 	number: number;
 }
 
+// ============================================================================
+// Flexible input helpers: bare PR number, Jira ticket, repo slug, search
+// ============================================================================
+
+function parseBareNumber(input: string): number | null {
+	const match = input.trim().match(/^#?(\d+)$/);
+	return match ? parseInt(match[1], 10) : null;
+}
+
+function isJiraTicketId(input: string): boolean {
+	return /^[A-Z]+-\d+$/i.test(input.trim());
+}
+
+async function getRepoSlug(pi: ExtensionAPI, repoCwd: string): Promise<string | null> {
+	const { stdout, code } = await pi.exec("git", ["-C", repoCwd, "remote", "get-url", "origin"]);
+	if (code !== 0) return null;
+	const match = stdout.trim().match(/github\.com[:/]([^/]+\/[^/.]+)/);
+	if (!match) return null;
+	return match[1].replace(/\.git$/, "");
+}
+
+async function fetchPrInfoFromRepo(
+	pi: ExtensionAPI,
+	repoCwd: string,
+	prNumber: number,
+): Promise<PrInfo | { error: string }> {
+	const slug = await getRepoSlug(pi, repoCwd);
+	if (!slug) return { error: "Could not determine GitHub repository from git remote." };
+	const [owner, repo] = slug.split("/");
+	return fetchPrInfo(pi, { owner, repo, number: prNumber });
+}
+
+async function searchPrsInRepo(
+	pi: ExtensionAPI,
+	repoCwd: string,
+	query: string,
+): Promise<Array<{ number: number; title: string; url: string; headRefName: string; state: string }>> {
+	const slug = await getRepoSlug(pi, repoCwd);
+	if (!slug) return [];
+	const { stdout, code } = await pi.exec("gh", [
+		"pr", "list", "--repo", slug, "--search", query, "--state", "all",
+		"--json", "number,title,url,headRefName,state", "--limit", "10",
+	]);
+	if (code !== 0) return [];
+	try {
+		return JSON.parse(stdout);
+	} catch {
+		return [];
+	}
+}
+
+/**
+ * Resolve flexible user input to a PR.
+ * Accepts: full URL, owner/repo#number, bare PR number (#42 or 42),
+ * Jira ticket ID (PROJ-123), or branch name / search query.
+ * Returns PrInfo on success, { error } on failure, or null if user cancelled.
+ */
+async function resolveFlexiblePrInput(
+	pi: ExtensionAPI,
+	ui: ExtensionContext["ui"],
+	input: string,
+	repoCwd: string,
+): Promise<PrInfo | { error: string } | null> {
+	const trimmed = input.trim();
+
+	// 1. Full GitHub URL or owner/repo#number
+	const prRef = parsePrReference(trimmed);
+	if (prRef) {
+		ui.notify(`Fetching PR #${prRef.number} from ${prRef.owner}/${prRef.repo}...`, "info");
+		return fetchPrInfo(pi, prRef);
+	}
+
+	// 2. Bare PR number (#42 or 42)
+	const bareNum = parseBareNumber(trimmed);
+	if (bareNum !== null) {
+		ui.notify(`Fetching PR #${bareNum}...`, "info");
+		return fetchPrInfoFromRepo(pi, repoCwd, bareNum);
+	}
+
+	// 3. Jira ticket ID or branch name → search for matching PRs
+	ui.notify(`Searching for PRs matching "${trimmed}"...`, "info");
+	const prs = await searchPrsInRepo(pi, repoCwd, trimmed);
+	if (prs.length === 0) {
+		return { error: `No PRs found matching "${trimmed}" in this repo.` };
+	}
+	if (prs.length === 1) {
+		ui.notify(`Found PR #${prs[0].number}: ${prs[0].title}`, "info");
+		return fetchPrInfoFromRepo(pi, repoCwd, prs[0].number);
+	}
+
+	// Multiple matches: let user choose
+	const choices = prs.map((pr) => `#${pr.number}: ${pr.title} [${pr.state}]`);
+	choices.push("Cancel");
+	const choice = await ui.select(`Multiple PRs found for "${trimmed}":`, choices);
+	if (!choice || choice === "Cancel") return null;
+	const selectedNum = parseInt(choice.match(/#(\d+)/)?.[1] || "0", 10);
+	if (!selectedNum) return { error: "Could not parse selection." };
+	return fetchPrInfoFromRepo(pi, repoCwd, selectedNum);
+}
+
 function parsePrReference(input: string): PrReference | null {
 	// Full GitHub URL: https://github.com/owner/repo/pull/123
 	const urlMatch = input.match(/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)/);
@@ -920,6 +1020,28 @@ export default function (pi: ExtensionAPI) {
 				const reposPath = getReposPath(cwd);
 				repoCwd = path.join(reposPath, selectedRepo);
 
+				// If args contained a flexible input (not a repo name), resolve it directly
+				// This handles: /review-me 42, /review-me PROJ-123, /review-me branch-name
+				let resolvedFromArgs = false;
+				if (trimmedArgs && trimmedArgs !== selectedRepo) {
+					const prInfo = await resolveFlexiblePrInput(pi, ctx.ui, trimmedArgs, repoCwd);
+					if (prInfo === null) {
+						ctx.ui.notify("Review cancelled.", "info");
+						return;
+					}
+					if ("error" in prInfo) {
+						ctx.ui.notify(prInfo.error, "error");
+						return;
+					}
+					diff = prInfo.diff;
+					changedFiles = prInfo.changedFiles;
+					branch = prInfo.branch;
+					baseBranch = prInfo.baseBranch;
+					commitCount = prInfo.commitCount;
+					resolvedFromArgs = true;
+				}
+
+				if (!resolvedFromArgs) {
 				// Step 2: Pick what to review (current branch, a PR, or cancel)
 				// Get branch info from the selected repo
 				const { stdout: currentBranchRaw, code: branchCode } = await pi.exec(
@@ -931,7 +1053,7 @@ export default function (pi: ExtensionAPI) {
 				if (currentBranchName && currentBranchName !== "master" && currentBranchName !== "main" && currentBranchName !== "HEAD") {
 					reviewOptions.push(`Review current branch (${currentBranchName})`);
 				}
-				reviewOptions.push("Review a specific PR (URL or owner/repo#number)");
+				reviewOptions.push("Review a PR (number, URL, ticket ID, or branch name)");
 				reviewOptions.push("Cancel");
 
 				const reviewChoice = await ctx.ui.select(`What do you want to review in ${selectedRepo}?`, reviewOptions);
@@ -940,27 +1062,21 @@ export default function (pi: ExtensionAPI) {
 					return;
 				}
 
-				if (reviewChoice.startsWith("Review a specific PR")) {
-					// ── PR mode (interactive) ──
+				if (reviewChoice.startsWith("Review a PR")) {
+					// ── PR mode (interactive, flexible input) ──
 					const userInput = await ctx.ui.input(
-						"Which PR do you want to review?",
-						"https://github.com/owner/repo/pull/123 or owner/repo#123",
+						"PR number, URL, ticket ID, or branch name:",
+						"e.g. 42, #42, PROJ-123, feature/my-branch, https://github.com/owner/repo/pull/123",
 					);
 					if (!userInput) {
 						ctx.ui.notify("Review cancelled.", "info");
 						return;
 					}
-					const pr = parsePrReference(userInput.trim());
-					if (!pr) {
-						ctx.ui.notify(
-							"Could not parse PR reference. Use format: https://github.com/owner/repo/pull/123 or owner/repo#123",
-							"error",
-						);
+					const prInfo = await resolveFlexiblePrInput(pi, ctx.ui, userInput, repoCwd);
+					if (prInfo === null) {
+						ctx.ui.notify("Review cancelled.", "info");
 						return;
 					}
-
-					ctx.ui.notify(`Fetching PR #${pr.number} from ${pr.owner}/${pr.repo}...`, "info");
-					const prInfo = await fetchPrInfo(pi, pr);
 					if ("error" in prInfo) {
 						ctx.ui.notify(prInfo.error, "error");
 						return;
@@ -1001,6 +1117,7 @@ export default function (pi: ExtensionAPI) {
 					diff = diffResult.stdout;
 					baseBranch = localBaseBranch;
 				}
+				} // end if (!resolvedFromArgs)
 			}
 
 			// -----------------------------------------------------------
