@@ -1008,6 +1008,10 @@ export default function (pi: ExtensionAPI) {
 				let selectedRepo: string | null = null;
 				if (trimmedArgs && availableRepos.includes(trimmedArgs)) {
 					selectedRepo = trimmedArgs;
+				} else if (availableRepos.length === 1) {
+					// Single repo — auto-select without asking
+					selectedRepo = availableRepos[0];
+					ctx.ui.notify(`Using repo: ${selectedRepo}`, "info");
 				} else {
 					const repoChoice = await ctx.ui.select("Which repo do you want to review?", [...availableRepos, "Cancel"]);
 					if (!repoChoice || repoChoice === "Cancel") {
