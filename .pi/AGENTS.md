@@ -83,6 +83,7 @@ Connect Jira Cloud and GitHub CLI.
 4. **Follow project conventions** — check `project.yml` for branch format, test command, linter, etc.
 5. **Follow existing patterns** — match the code style and test patterns already in place.
 6. **Plan before implementing** — present your plan and get approval before writing code (unless autonomy is "autonomous").
+7. **Single-repo shortcut** — if `project.yml` has only one repo configured, use it automatically without asking "which repo?". Never prompt for repo selection when there's only one option.
 
 ## Post-Compaction Recovery
 
