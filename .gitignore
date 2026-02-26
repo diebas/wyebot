@@ -1,0 +1,13 @@
+# OS files
+.DS_Store
+
+# Node
+node_modules/
+
+# Editor
+.vscode/
+.idea/
+
+# Pi local config and sessions (per-user, not shared)
+.pi/sessions/
+.pi/local.json

@@ -1,0 +1,18 @@
+{
+  "defaultProvider": "anthropic",
+  "defaultModel": "claude-sonnet-4-5-20250929",
+  "defaultThinkingLevel": "high",
+  "extensions": [
+    "./extensions/wyebot",
+    "./extensions/code-review.ts",
+    "./extensions/playwright-browser.ts"
+  ],
+  "skills": [
+    "./skills"
+  ],
+  "compaction": {
+    "enabled": true,
+    "reserveTokens": 16384,
+    "keepRecentTokens": 20000
+  }
+}

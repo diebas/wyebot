@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "playwright": "^1.58.2",
+    "yaml": "^2.8.2"
+  }
+}
