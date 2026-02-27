@@ -1353,6 +1353,32 @@ export default function (pi: ExtensionAPI) {
     },
   });
 
+  pi.registerCommand("flaky-test", {
+    description:
+      "Diagnose and fix a flaky (intermittent) test failure",
+    handler: async (args, ctx) => {
+      if (args?.trim()) {
+        pi.sendUserMessage(
+          `/skill:flaky-test\n\nTest: ${args.trim()}`,
+          { deliverAs: "followUp" }
+        );
+      } else {
+        const input = await ctx.ui.input(
+          "Which test is flaky?",
+          "e.g. spec/models/user_spec.rb:42, src/__tests__/auth.test.ts"
+        );
+        if (!input) {
+          ctx.ui.notify("Cancelled.", "warning");
+          return;
+        }
+        pi.sendUserMessage(
+          `/skill:flaky-test\n\nTest: ${input.trim()}`,
+          { deliverAs: "followUp" }
+        );
+      }
+    },
+  });
+
   pi.registerCommand("change-provider", {
     description: "Change the AI provider and model",
     handler: async (_args, ctx) => {
@@ -1447,6 +1473,10 @@ export default function (pi: ExtensionAPI) {
           desc: "Generate step-by-step QA testing guide from ticket/PR",
         },
         {
+          cmd: "/flaky-test [test path]",
+          desc: "Diagnose and fix intermittent test failures",
+        },
+        {
           cmd: "/rebase [branch | #PR | repo]",
           desc: "PR-aware interactive rebase with conflict resolution",
         },
@@ -1490,22 +1520,22 @@ export default function (pi: ExtensionAPI) {
         "╭─ wyebot ─ Available Commands ─────────────────────────────────╮\n│\n";
 
       output += "│  🔧 Development\n";
-      for (const c of commands.slice(0, 5)) {
+      for (const c of commands.slice(0, 6)) {
         output += `│    ${c.cmd.padEnd(maxCmd + 2)}${c.desc}\n`;
       }
 
       output += "│\n│  📊 Reporting\n";
-      for (const c of commands.slice(5, 9)) {
+      for (const c of commands.slice(6, 10)) {
         output += `│    ${c.cmd.padEnd(maxCmd + 2)}${c.desc}\n`;
       }
 
       output += "│\n│  🧠 Memory & Setup\n";
-      for (const c of commands.slice(9, 12)) {
+      for (const c of commands.slice(10, 13)) {
         output += `│    ${c.cmd.padEnd(maxCmd + 2)}${c.desc}\n`;
       }
 
       output += "│\n│  ⚙️  Configuration\n";
-      for (const c of commands.slice(12)) {
+      for (const c of commands.slice(13)) {
         output += `│    ${c.cmd.padEnd(maxCmd + 2)}${c.desc}\n`;
       }
 
