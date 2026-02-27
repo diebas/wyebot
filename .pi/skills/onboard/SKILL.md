@@ -18,14 +18,16 @@ The mode is passed in the user message: `fresh`, `reset`, or `complement`.
 
 ## Step 1: Find Repositories
 
-### Auto-detection
-1. Check if `.pi/local.json` exists and has `reposPath`. If so, use that as the base directory.
-2. Otherwise, use the current working directory.
-3. Scan the base directory for subdirectories containing `.git`.
-4. Present the list of found repos to the user.
+### Determine base directory
+The user message includes `Repos path: <path>` — use that as the base directory for scanning.
+If no path was provided, fall back to `.pi/local.json` (`reposPath`), then the current working directory.
+
+### Scan
+1. Scan the base directory for subdirectories containing `.git`.
+2. Present the list of found repos to the user.
 
 If NO repos are found, ask:
-> **No git repositories found in `<path>`. Where are your repos located?**
+> **No git repositories found in `<path>`. Is the path correct? Please provide the directory where your repos are located.**
 
 ### Verify
 Once repos are identified, list them and ask the user to confirm:

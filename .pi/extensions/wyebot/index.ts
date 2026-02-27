@@ -1093,7 +1093,36 @@ export default function (pi: ExtensionAPI) {
       );
 
       if (onboard?.startsWith("Yes")) {
-        pi.sendUserMessage("/skill:onboard", { deliverAs: "followUp" });
+        const setupReposPath = await ctx.ui.input(
+          "Where are your repos located?",
+          ctx.cwd
+        );
+        if (setupReposPath) {
+          const cleanPath = setupReposPath.trim().replace(/\/+$/, "");
+          if (cleanPath !== ctx.cwd) {
+            const localPath = join(ctx.cwd, ".pi", "local.json");
+            let lc: Record<string, any> = {};
+            if (existsSync(localPath)) {
+              try {
+                lc = JSON.parse(readFileSync(localPath, "utf-8"));
+              } catch {}
+            }
+            lc.reposPath = cleanPath;
+            writeFileSync(
+              localPath,
+              JSON.stringify(lc, null, 2) + "\n",
+              "utf-8"
+            );
+          }
+          pi.sendUserMessage(
+            `/skill:onboard\n\nMode: fresh\nRepos path: ${cleanPath}`,
+            { deliverAs: "followUp" }
+          );
+        } else {
+          pi.sendUserMessage("/skill:onboard\n\nMode: fresh", {
+            deliverAs: "followUp",
+          });
+        }
       } else {
         ctx.ui.notify(
           "Setup complete! Run /onboard when you're ready to configure your project.\n" +
@@ -1249,6 +1278,37 @@ export default function (pi: ExtensionAPI) {
       const hasExistingConfig =
         project?.repos && project.repos.length > 0;
 
+      // Determine repos path
+      const currentReposPath = getReposPath(ctx.cwd);
+      const reposPathInput = await ctx.ui.input(
+        "Where are your repos located?",
+        currentReposPath
+      );
+      if (!reposPathInput) {
+        ctx.ui.notify("Cancelled.", "warning");
+        return;
+      }
+      const reposPath = reposPathInput.trim().replace(/\/+$/, "");
+
+      // Persist to local.json if different from cwd
+      if (reposPath !== ctx.cwd) {
+        const localConfigPath = join(ctx.cwd, ".pi", "local.json");
+        let localConfig: Record<string, any> = {};
+        if (existsSync(localConfigPath)) {
+          try {
+            localConfig = JSON.parse(
+              readFileSync(localConfigPath, "utf-8")
+            );
+          } catch {}
+        }
+        localConfig.reposPath = reposPath;
+        writeFileSync(
+          localConfigPath,
+          JSON.stringify(localConfig, null, 2) + "\n",
+          "utf-8"
+        );
+      }
+
       if (hasExistingConfig) {
         const mode = await ctx.ui.select(
           "Project is already configured. What do you want to do?",
@@ -1264,13 +1324,16 @@ export default function (pi: ExtensionAPI) {
         }
         const isReset = mode.startsWith("Full reset");
         pi.sendUserMessage(
-          `/skill:onboard\n\nMode: ${isReset ? "reset" : "complement"}`,
+          `/skill:onboard\n\nMode: ${isReset ? "reset" : "complement"}\nRepos path: ${reposPath}`,
           { deliverAs: "followUp" }
         );
       } else {
-        pi.sendUserMessage("/skill:onboard\n\nMode: fresh", {
-          deliverAs: "followUp",
-        });
+        pi.sendUserMessage(
+          `/skill:onboard\n\nMode: fresh\nRepos path: ${reposPath}`,
+          {
+            deliverAs: "followUp",
+          }
+        );
       }
     },
   });
