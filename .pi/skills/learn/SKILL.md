@@ -86,7 +86,7 @@ When the user provides **only a repo name** (no specific branch), the goal is to
    git show <commit-hash> --stat
    git show <commit-hash>
    ```
-3. Focus on: new models, new services, config changes, new patterns, migration files.
+3. Focus on: new modules/types, new services or abstractions, config changes, new patterns, schema/migration changes.
 
 #### If on a feature branch (your own work):
 1. Determine the base branch (usually `master` or `main`):
@@ -114,7 +114,7 @@ Look for these categories of learnings:
 
 **Architecture (`memory/ARCHITECTURE.md`)**:
 - New extension points or patterns
-- Changes to the domain model (new models, new relationships)
+- Changes to the domain model (new types, entities, or relationships)
 - New integrations or services
 - Changes to the deployment or configuration system
 

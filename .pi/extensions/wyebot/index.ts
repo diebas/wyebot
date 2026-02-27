@@ -983,11 +983,19 @@ export default function (pi: ExtensionAPI) {
 
         // Execution
         const execLevel = await ctx.ui.select("Code execution:", [
-          "Tests and linter only (recommended)",
+          "Tests and linter (recommended)",
+          "Tests only — I run linter myself",
+          "Linter only — I run tests myself",
           "Full — tests, linter, install deps, and run migrations",
           "None — I run everything myself",
         ]);
-        if (execLevel?.startsWith("Full")) {
+        if (execLevel?.startsWith("Tests and linter")) {
+          // defaults already have tests + linter on
+        } else if (execLevel?.startsWith("Tests only")) {
+          agentConfig.execution.run_linter = false;
+        } else if (execLevel?.startsWith("Linter only")) {
+          agentConfig.execution.run_tests = false;
+        } else if (execLevel?.startsWith("Full")) {
           agentConfig.execution.install_dependencies = true;
           agentConfig.execution.run_migrations = true;
         } else if (execLevel?.startsWith("None")) {

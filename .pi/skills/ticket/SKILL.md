@@ -25,7 +25,7 @@ Directives and Architecture are already in your system prompt (auto-injected).
 
 ### Phase 2: Analysis
 1. **Determine repo placement**: If multiple repos exist, which repo should this change go in? Explain your reasoning. Check the project's `repo_structure` in project.yml for guidance (e.g., parent-forks, backend-frontend).
-2. **Identify affected areas**: Which models, controllers, services, views, and tests will be touched?
+2. **Identify affected areas**: Which parts of the codebase will be touched? Use the project's architectural categories from memory files.
 3. **Check for existing patterns**: Look at how similar features are already implemented.
 4. **Identify dependencies**: Does this require changes in multiple repos? What order should they be made?
 
@@ -76,11 +76,11 @@ Then proceed with implementation:
 1. **Review existing tests** in the same area to understand patterns.
 2. **Add new tests** that cover the implemented functionality.
 3. **Maintain consistency**: Use the same factories, shared examples, and helper patterns already in use.
-4. **Test types to consider**:
-   - Model/unit specs for business logic
-   - Controller/request specs for endpoints
-   - System/integration specs for user-facing flows (if the feature is UI-heavy)
-   - Service specs for extracted business logic
+4. **Test types to consider** (adapt to the project's test framework and conventions):
+   - Unit tests for business logic and core modules
+   - Integration/request tests for API endpoints or routes
+   - System/E2E tests for user-facing flows (if the feature is UI-heavy)
+   - Service/use-case tests for extracted business logic
 5. **Run the test suite** using the command from project.yml (`conventions.test_command`) to verify nothing is broken.
 
 ### Phase 6: Code Quality

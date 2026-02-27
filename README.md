@@ -107,16 +107,16 @@ repos:
   - name: my-backend
     path: ./my-backend
     type: primary
-    stack: rails
+    stack: rails              # or: phoenix, express, fastapi, go, rust, etc.
   - name: my-frontend
     path: ./my-frontend
     type: service
-    stack: react
+    stack: react              # or: vue, svelte, angular, etc.
 
 conventions:
   branch_format: "ticket-number/description"
-  linter: "rubocop -A"
-  test_command: "bundle exec rspec"
+  linter: "rubocop -A"             # or: "npx eslint --fix .", "mix format", "cargo fmt", etc.
+  test_command: "bundle exec rspec" # or: "npx jest", "pytest", "go test ./...", "mix test", etc.
   pr_template: ".github/pull_request_template.md"
   merge_strategy: squash
 
@@ -130,8 +130,8 @@ agent:
   execution:
     run_tests: true            # run test suite
     run_linter: true           # run linter with auto-fix
-    install_dependencies: false # bundle install, npm install, etc.
-    run_migrations: false      # rails db:migrate, etc.
+    install_dependencies: false # npm install, bundle install, pip install, etc.
+    run_migrations: false      # db:migrate, alembic upgrade, prisma migrate, etc.
   services:
     comment_on_prs: false      # leave comments on GitHub PRs
     update_jira: false         # modify Jira tickets
