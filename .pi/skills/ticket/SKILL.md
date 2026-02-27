@@ -54,6 +54,18 @@ Present a clear plan to the user:
 **Wait for user approval before proceeding** (unless agent autonomy is set to "autonomous" in project.yml).
 
 ### Phase 4: Implementation
+
+**Before writing any code**, verify the current branch in each target repo:
+```bash
+cd <repo-dir>
+git branch --show-current
+```
+- If the branch matches the ticket: proceed.
+- If on a **different branch**: STOP. Alert the user — they may have switched context between messages. Ask before making any changes.
+- If on **master/main**: Ask the user if they want to switch to the ticket branch or create it.
+- **This check must happen on every new message**, not just at the start of the ticket. The developer may switch terminals or workflows between prompts.
+
+Then proceed with implementation:
 1. Make changes following the patterns already established in each repo.
 2. Keep changes focused and minimal — don't refactor unrelated code.
 3. Match existing code style exactly (indentation, naming, patterns).
