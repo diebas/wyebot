@@ -23,7 +23,7 @@ The project is configured via `project.yml` at the root. This file contains:
 - **Repos**: Names, paths, types, and tech stacks
 - **Conventions**: Branch format, commit format, linter, test command, PR template, merge strategy
 - **Deployment**: How the project is deployed
-- **Agent config**: Autonomy level, guardrails (things you must NEVER do), protected files
+- **Agent config**: Structured autonomy flags (git, execution, services), guardrails, protected files
 - **Jira config**: Board ID, ticket prefixes, exclusion prefixes
 
 Always check `project.yml` when you need to know project conventions, run tests, or lint code.
@@ -79,11 +79,12 @@ Connect Jira Cloud and GitHub CLI.
 
 1. **Always read memory files** before starting work on any repo.
 2. **Always update memory files** after completing work or discovering something new.
-3. **Respect guardrails** from project.yml — check `agent.guardrails` and `agent.protected_files`.
-4. **Follow project conventions** — check `project.yml` for branch format, test command, linter, etc.
-5. **Follow existing patterns** — match the code style and test patterns already in place.
-6. **Plan before implementing** — present your plan and get approval before writing code (unless autonomy is "autonomous").
-7. **Single-repo shortcut** — if `project.yml` has only one repo configured, use it automatically without asking "which repo?". Never prompt for repo selection when there's only one option.
+3. **Respect autonomy flags** from project.yml — check `agent.git`, `agent.execution`, and `agent.services` before performing actions. Never commit if `git.commit` is false, never push if `git.push` is false, etc.
+4. **Respect guardrails** from project.yml — check `agent.guardrails` and `agent.protected_files`.
+5. **Follow project conventions** — check `project.yml` for branch format, test command, linter, etc.
+6. **Follow existing patterns** — match the code style and test patterns already in place.
+7. **Plan before implementing** — present your plan and get approval before writing code (unless autonomy is "autonomous").
+8. **Single-repo shortcut** — if `project.yml` has only one repo configured, use it automatically without asking "which repo?". Never prompt for repo selection when there's only one option.
 
 ## Post-Compaction Recovery
 
