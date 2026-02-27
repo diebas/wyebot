@@ -122,31 +122,49 @@ After the automated scan, ask these questions that can't be detected from code:
 > 4. Backend + Frontend + shared libs
 > 5. Other (describe)
 
-### Q3: Guardrails
-> **What should the agent NEVER do?**
-> 1. Don't commit/push/create PRs (I handle git myself) ← default
-> 2. Don't modify certain files: ___
-> 3. Other: ___
+### Q3: Agent Autonomy
+If `project.yml` already has an `agent` section (e.g., from `/setup`), show the current config and ask:
+> **Agent autonomy is already configured:**
+> - Git: branches ✅, commit ❌, push ❌, PRs ❌
+> - Execution: tests ✅, linter ✅, deps ❌, migrations ❌
+> - Services: PR comments ❌, Jira ❌
+>
+> **Keep this config or reconfigure?**
 
-### Q4: Deployment
+If NOT already configured, ask:
+> **How much should the agent do on its own?**
+> 1. Conservative — I control git, agent runs tests and linter ← default
+> 2. Balanced — Agent handles branches and commits, I handle push/PRs
+> 3. Full auto — Agent handles everything including push and PRs
+> 4. Custom — Let me choose each setting
+
+For Custom, ask each category:
+- **Git**: None / Branches only / Branches + commits / Full (branches, commits, push, PRs)
+- **Execution**: Tests and linter only / Full (+ deps + migrations) / None
+- **Services**: None / Comment on PRs / PRs + Jira
+- **Planning**: Mixed / Confirmatory / Autonomous
+
+### Q4: Protected Files
+> **Are there files the agent should NEVER modify?** (e.g., .env, secrets, CI config)
+> Enter paths separated by commas, or "none".
+
+### Q5: Additional Guardrails
+> **Any other rules for the agent?** (free text, or "none")
+> Examples: "Always write tests before implementation", "Never modify the database schema directly"
+
+### Q6: Deployment
 > **How do you deploy?**
 > 1. Automatic on merge to main (CI/CD)
 > 2. Manual with tags/releases
 > 3. Other: ___
 
-### Q5: PR/Merge Strategy
+### Q7: PR/Merge Strategy
 > **How do you handle PRs?**
 > 1. Squash merge
 > 2. Rebase merge
 > 3. Merge commit
 >
 > **How many approvals required?** (default: 1)
-
-### Q6: Agent Autonomy
-> **How autonomous should the agent be?**
-> 1. Confirmatory — present a plan and wait for approval before each step
-> 2. Autonomous — implement and show what was done
-> 3. Mixed — plan for big features, autonomous for bugfixes (recommended)
 
 Wait for answers before proceeding.
 
@@ -156,9 +174,29 @@ Write the `project.yml` file with all detected and user-provided information. In
 - Project name and description (from Q1)
 - All repos with their type, path, and detected stack
 - Repo structure (from Q2)
-- Detected conventions (branch format, commit format, linter command, test command, PR template path, merge strategy from Q5)
-- Deployment info (from Q4)
-- Agent config: autonomy (from Q6), guardrails (from Q3), protected files
+- Detected conventions (branch format, commit format, linter command, test command, PR template path, merge strategy from Q7)
+- Deployment info (from Q6)
+- Agent config with structured autonomy (from Q3):
+  ```yaml
+  agent:
+    autonomy: mixed            # planning: confirmatory | autonomous | mixed
+    git:
+      create_branches: true
+      commit: false
+      push: false
+      create_pr: false
+    execution:
+      run_tests: true
+      run_linter: true
+      install_dependencies: false
+      run_migrations: false
+    services:
+      comment_on_prs: false
+      update_jira: false
+    guardrails: []             # from Q5
+    protected_files: []        # from Q4
+  ```
+  If `project.yml` already has an `agent` section (from `/setup`) and the user chose to keep it, preserve those values.
 - Jira config: leave board_id as null, suggest user fills it in if they use Jira
 
 ## Step 5: Generate `memory/DIRECTIVES.md`

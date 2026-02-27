@@ -36,6 +36,22 @@ interface ProjectConfig {
   deployment: { strategy: string; notes: string };
   agent: {
     autonomy: string;
+    git: {
+      create_branches: boolean;
+      commit: boolean;
+      push: boolean;
+      create_pr: boolean;
+    };
+    execution: {
+      run_tests: boolean;
+      run_linter: boolean;
+      install_dependencies: boolean;
+      run_migrations: boolean;
+    };
+    services: {
+      comment_on_prs: boolean;
+      update_jira: boolean;
+    };
     guardrails: string[];
     protected_files: string[];
   };
@@ -300,16 +316,36 @@ export default function (pi: ExtensionAPI) {
         memoryBlock += `Description: ${project.project.description}\n`;
       if (project.repo_structure)
         memoryBlock += `Repo structure: ${project.repo_structure}\n`;
-      if (project.agent?.guardrails?.length) {
-        memoryBlock += `\nGuardrails:\n`;
-        for (const g of project.agent.guardrails) {
-          memoryBlock += `- ${g}\n`;
+      // Structured autonomy flags
+      const agent = project.agent;
+      if (agent) {
+        memoryBlock += `\nAgent autonomy: ${agent.autonomy || "mixed"}\n`;
+        if (agent.git) {
+          const g = agent.git;
+          const flag = (v: boolean) => (v ? "✅" : "❌");
+          memoryBlock += `Git: create branches ${flag(g.create_branches)}, commit ${flag(g.commit)}, push ${flag(g.push)}, create PRs ${flag(g.create_pr)}\n`;
         }
-      }
-      if (project.agent?.protected_files?.length) {
-        memoryBlock += `\nProtected files (do NOT modify):\n`;
-        for (const f of project.agent.protected_files) {
-          memoryBlock += `- ${f}\n`;
+        if (agent.execution) {
+          const e = agent.execution;
+          const flag = (v: boolean) => (v ? "✅" : "❌");
+          memoryBlock += `Execution: run tests ${flag(e.run_tests)}, run linter ${flag(e.run_linter)}, install deps ${flag(e.install_dependencies)}, run migrations ${flag(e.run_migrations)}\n`;
+        }
+        if (agent.services) {
+          const s = agent.services;
+          const flag = (v: boolean) => (v ? "✅" : "❌");
+          memoryBlock += `Services: comment on PRs ${flag(s.comment_on_prs)}, update Jira ${flag(s.update_jira)}\n`;
+        }
+        if (agent.guardrails?.length) {
+          memoryBlock += `\nAdditional guardrails:\n`;
+          for (const g of agent.guardrails) {
+            memoryBlock += `- ${g}\n`;
+          }
+        }
+        if (agent.protected_files?.length) {
+          memoryBlock += `\nProtected files (do NOT modify):\n`;
+          for (const f of agent.protected_files) {
+            memoryBlock += `- ${f}\n`;
+          }
         }
       }
       memoryBlock += "\n";
@@ -858,9 +894,190 @@ export default function (pi: ExtensionAPI) {
         ctx.ui.notify("Run /github-login to connect GitHub.", "info");
       }
 
-      // Step 4: Onboard
+      // Step 4: Agent autonomy
+      const autonomyProfile = await ctx.ui.select(
+        "Step 4 — How much should the agent do on its own?",
+        [
+          "Conservative — I control git, agent runs tests and linter",
+          "Balanced — Agent handles branches and commits, I handle push/PRs",
+          "Full auto — Agent handles everything including push and PRs",
+          "Custom — Let me choose each setting",
+          "Skip — I'll configure this later in project.yml",
+        ]
+      );
+
+      interface AgentConfig {
+        autonomy: string;
+        git: {
+          create_branches: boolean;
+          commit: boolean;
+          push: boolean;
+          create_pr: boolean;
+        };
+        execution: {
+          run_tests: boolean;
+          run_linter: boolean;
+          install_dependencies: boolean;
+          run_migrations: boolean;
+        };
+        services: {
+          comment_on_prs: boolean;
+          update_jira: boolean;
+        };
+        guardrails: string[];
+        protected_files: string[];
+      }
+
+      const agentConfig: AgentConfig = {
+        autonomy: "mixed",
+        git: {
+          create_branches: true,
+          commit: false,
+          push: false,
+          create_pr: false,
+        },
+        execution: {
+          run_tests: true,
+          run_linter: true,
+          install_dependencies: false,
+          run_migrations: false,
+        },
+        services: {
+          comment_on_prs: false,
+          update_jira: false,
+        },
+        guardrails: [],
+        protected_files: [],
+      };
+
+      if (autonomyProfile?.startsWith("Conservative")) {
+        // defaults are already conservative
+      } else if (autonomyProfile?.startsWith("Balanced")) {
+        agentConfig.git.commit = true;
+        agentConfig.execution.install_dependencies = true;
+      } else if (autonomyProfile?.startsWith("Full auto")) {
+        agentConfig.autonomy = "autonomous";
+        agentConfig.git.commit = true;
+        agentConfig.git.push = true;
+        agentConfig.git.create_pr = true;
+        agentConfig.execution.install_dependencies = true;
+        agentConfig.execution.run_migrations = true;
+        agentConfig.services.comment_on_prs = true;
+      } else if (autonomyProfile?.startsWith("Custom")) {
+        // Git
+        const gitLevel = await ctx.ui.select("Git operations:", [
+          "None — I handle all git myself",
+          "Branches only — create and switch branches",
+          "Branches + commits",
+          "Full — branches, commits, push, and create PRs",
+        ]);
+        if (gitLevel?.startsWith("None")) {
+          agentConfig.git.create_branches = false;
+        } else if (gitLevel?.startsWith("Branches + commits")) {
+          agentConfig.git.commit = true;
+        } else if (gitLevel?.startsWith("Full")) {
+          agentConfig.git.commit = true;
+          agentConfig.git.push = true;
+          agentConfig.git.create_pr = true;
+        }
+
+        // Execution
+        const execLevel = await ctx.ui.select("Code execution:", [
+          "Tests and linter only (recommended)",
+          "Full — tests, linter, install deps, and run migrations",
+          "None — I run everything myself",
+        ]);
+        if (execLevel?.startsWith("Full")) {
+          agentConfig.execution.install_dependencies = true;
+          agentConfig.execution.run_migrations = true;
+        } else if (execLevel?.startsWith("None")) {
+          agentConfig.execution.run_tests = false;
+          agentConfig.execution.run_linter = false;
+        }
+
+        // Services
+        const svcLevel = await ctx.ui.select("External services:", [
+          "None — don't touch GitHub/Jira (recommended)",
+          "Comment on PRs only",
+          "Comment on PRs + update Jira tickets",
+        ]);
+        if (svcLevel?.startsWith("Comment on PRs only")) {
+          agentConfig.services.comment_on_prs = true;
+        } else if (svcLevel?.startsWith("Comment on PRs +")) {
+          agentConfig.services.comment_on_prs = true;
+          agentConfig.services.update_jira = true;
+        }
+
+        // Planning autonomy
+        const planLevel = await ctx.ui.select("Planning autonomy:", [
+          "Mixed — plan for features, autonomous for bugfixes (recommended)",
+          "Confirmatory — always present plan and wait for approval",
+          "Autonomous — implement and show what was done",
+        ]);
+        if (planLevel?.startsWith("Confirmatory")) {
+          agentConfig.autonomy = "confirmatory";
+        } else if (planLevel?.startsWith("Autonomous")) {
+          agentConfig.autonomy = "autonomous";
+        }
+      }
+
+      // Write autonomy config to project.yml
+      if (!autonomyProfile?.startsWith("Skip")) {
+        const projectPath = join(ctx.cwd, "project.yml");
+        let projectContent = "";
+        if (existsSync(projectPath)) {
+          projectContent = readFileSync(projectPath, "utf-8");
+        }
+
+        // If project.yml already has an agent section, replace it; otherwise append
+        const agentYaml =
+          `agent:\n` +
+          `  autonomy: ${agentConfig.autonomy}\n` +
+          `  git:\n` +
+          `    create_branches: ${agentConfig.git.create_branches}\n` +
+          `    commit: ${agentConfig.git.commit}\n` +
+          `    push: ${agentConfig.git.push}\n` +
+          `    create_pr: ${agentConfig.git.create_pr}\n` +
+          `  execution:\n` +
+          `    run_tests: ${agentConfig.execution.run_tests}\n` +
+          `    run_linter: ${agentConfig.execution.run_linter}\n` +
+          `    install_dependencies: ${agentConfig.execution.install_dependencies}\n` +
+          `    run_migrations: ${agentConfig.execution.run_migrations}\n` +
+          `  services:\n` +
+          `    comment_on_prs: ${agentConfig.services.comment_on_prs}\n` +
+          `    update_jira: ${agentConfig.services.update_jira}\n` +
+          `  guardrails: []\n` +
+          `  protected_files: []\n`;
+
+        if (projectContent.match(/^agent:\s*$/m)) {
+          // Replace existing agent block (everything from `agent:` to next top-level key or EOF)
+          projectContent = projectContent.replace(
+            /^agent:\s*\n(?:[ \t]+.*\n)*/m,
+            agentYaml
+          );
+        } else if (projectContent.trim()) {
+          projectContent = projectContent.trimEnd() + "\n\n" + agentYaml;
+        } else {
+          projectContent = agentYaml;
+        }
+
+        writeFileSync(projectPath, projectContent, "utf-8");
+
+        const flag = (v: boolean) => (v ? "✅" : "❌");
+        const gc = agentConfig.git;
+        const ec = agentConfig.execution;
+        ctx.ui.notify(
+          `Agent autonomy configured (${autonomyProfile?.split(" — ")[0]}):\n` +
+            `  Git: branches ${flag(gc.create_branches)}, commit ${flag(gc.commit)}, push ${flag(gc.push)}, PRs ${flag(gc.create_pr)}\n` +
+            `  Exec: tests ${flag(ec.run_tests)}, linter ${flag(ec.run_linter)}, deps ${flag(ec.install_dependencies)}, migrations ${flag(ec.run_migrations)}\n` +
+            `  You can fine-tune these in project.yml under 'agent'.`,
+          "info"
+        );
+      }
+
+      // Step 5: Onboard
       const onboard = await ctx.ui.select(
-        "Step 4 — Onboard your project?",
+        "Step 5 — Onboard your project?",
         [
           "Yes — scan my repos and configure the agent now",
           "Later — I'll run /onboard when ready",

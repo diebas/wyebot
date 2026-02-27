@@ -132,7 +132,7 @@ After completing the work:
 
 ## Important Rules
 
-- **Respect guardrails** from project.yml (e.g., don't commit/push if configured).
+- **Respect autonomy flags** from project.yml — check `agent.git`, `agent.execution`, `agent.services` before performing any action. For example, don't commit if `git.commit` is false, don't push if `git.push` is false.
 - **DO NOT** modify unrelated code or "improve" things not in the ticket.
 - **DO** ask questions if the ticket is ambiguous.
 - **DO** explain your reasoning when choosing where to place changes.
