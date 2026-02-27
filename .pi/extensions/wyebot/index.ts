@@ -1208,4 +1208,95 @@ export default function (pi: ExtensionAPI) {
       );
     },
   });
+
+  pi.registerCommand("help", {
+    description: "Show available commands and skills",
+    handler: async (_args, ctx) => {
+      const commands = [
+        {
+          cmd: "/ticket [ID or description]",
+          desc: "Work on a ticket — plan, implement, test, QA",
+        },
+        {
+          cmd: "/review-me [repo | PR-url]",
+          desc: "Multi-agent parallel code review",
+        },
+        {
+          cmd: "/pr-desc [repo]",
+          desc: "Generate a PR description from your branch diff",
+        },
+        {
+          cmd: "/qa-guide [ticket or PR]",
+          desc: "Generate step-by-step QA testing guide from ticket/PR",
+        },
+        {
+          cmd: "/rebase [branch | #PR | repo]",
+          desc: "PR-aware interactive rebase with conflict resolution",
+        },
+        {
+          cmd: "/learn [repo]",
+          desc: "Review recent changes and update memory files",
+        },
+        {
+          cmd: "/sprint-notes",
+          desc: "Generate sprint notes table from Jira for Notion",
+        },
+        {
+          cmd: "/release-notes",
+          desc: "Generate release notes from latest tags in repos",
+        },
+        { cmd: "/recap", desc: "Summarize recent work sessions" },
+        { cmd: "/memory", desc: "Show memory files status" },
+        {
+          cmd: "/onboard",
+          desc: "Scan repos, detect stack, configure the agent",
+        },
+        {
+          cmd: "/setup",
+          desc: "Initial setup wizard (provider, auth, services)",
+        },
+        { cmd: "/change-provider", desc: "Switch AI provider and model" },
+        { cmd: "/jira-login", desc: "Configure Jira authentication" },
+        { cmd: "/jira-logout", desc: "Remove stored Jira credentials" },
+        { cmd: "/github-login", desc: "Setup GitHub CLI authentication" },
+        { cmd: "/github-logout", desc: "Logout from GitHub CLI" },
+        {
+          cmd: "/browser-setup",
+          desc: "Install Playwright for browser-based QA",
+        },
+        { cmd: "/browser-reset", desc: "Reset headless browser session" },
+      ];
+
+      const maxCmd = Math.max(...commands.map((c) => c.cmd.length));
+
+      let output =
+        "╭─ wyebot ─ Available Commands ─────────────────────────────────╮\n│\n";
+
+      output += "│  🔧 Development\n";
+      for (const c of commands.slice(0, 5)) {
+        output += `│    ${c.cmd.padEnd(maxCmd + 2)}${c.desc}\n`;
+      }
+
+      output += "│\n│  📊 Reporting\n";
+      for (const c of commands.slice(5, 9)) {
+        output += `│    ${c.cmd.padEnd(maxCmd + 2)}${c.desc}\n`;
+      }
+
+      output += "│\n│  🧠 Memory & Setup\n";
+      for (const c of commands.slice(9, 12)) {
+        output += `│    ${c.cmd.padEnd(maxCmd + 2)}${c.desc}\n`;
+      }
+
+      output += "│\n│  ⚙️  Configuration\n";
+      for (const c of commands.slice(12)) {
+        output += `│    ${c.cmd.padEnd(maxCmd + 2)}${c.desc}\n`;
+      }
+
+      output +=
+        "│\n╰───────────────────────────────────────────────────────────────╯\n";
+      output += "\nTip: You can also describe what you need in plain language.";
+
+      ctx.ui.notify(output, "info");
+    },
+  });
 }
