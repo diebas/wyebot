@@ -89,7 +89,7 @@ This gives the user instant confirmation that the right PR was identified before
 1. Read the PR description/ticket to understand the goal.
 2. Review the file list to understand scope.
 3. Identify the type of change: feature, bugfix, refactor, config, test-only, etc.
-4. Check which areas are touched: models, controllers, views, services, tests, migrations.
+4. Categorize changed files based on the project's architecture (check memory files for the project's structure — e.g., MVC layers, modules, packages, contexts).
 
 ### 📢 Progress Output: Scope Overview
 
@@ -97,11 +97,12 @@ This gives the user instant confirmation that the right PR was identified before
 
 > 📋 **Change scope**: `<type>` (feature / bugfix / refactor / etc.)
 > **Areas touched**:
-> - Models: `file1.rb`, `file2.rb`
-> - Controllers: `file3.rb`
-> - Views: `file4.html.erb`
-> - Tests: `file5_spec.rb`, `file6_spec.rb`
+> - [Category]: `file1`, `file2`
+> - [Category]: `file3`
+> - Tests: `file4`, `file5`
 > - (etc.)
+>
+> Use the project's own architectural categories from memory files (e.g., Models/Controllers/Views for MVC, Contexts/LiveViews for Phoenix, Handlers/Repositories for Go, Components/Hooks for React, etc.).
 >
 > ⏳ Starting deep review...
 
@@ -113,7 +114,7 @@ Go through the diff carefully. For each file, read the surrounding context in th
 
 **As you review each area**, output brief progress indicators so the user sees activity:
 - When reading a file for context: no output needed (the tool call is visible).
-- **When you finish reviewing a logical area** (e.g., models, controllers, tests) and find issues, you may output early findings inline before moving to the next area. This is optional for small PRs but **recommended for PRs with 5+ files changed**.
+- **When you finish reviewing a logical area** and find issues, you may output early findings inline before moving to the next area. This is optional for small PRs but **recommended for PRs with 5+ files changed**.
 
 Check for:
 
@@ -131,7 +132,7 @@ Check for:
 #### Security
 - Are there authorization checks?
 - Is user input sanitized?
-- Are there mass assignment vulnerabilities (strong params)?
+- Are there mass assignment or input validation vulnerabilities?
 - Any exposed secrets or hardcoded credentials?
 
 #### Testing

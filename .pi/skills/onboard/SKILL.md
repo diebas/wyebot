@@ -140,7 +140,7 @@ If NOT already configured, ask:
 
 For Custom, ask each category:
 - **Git**: None / Branches only / Branches + commits / Full (branches, commits, push, PRs)
-- **Execution**: Tests and linter only / Full (+ deps + migrations) / None
+- **Execution**: Tests and linter / Tests only / Linter only / Full (+ deps + migrations) / None
 - **Services**: None / Comment on PRs / PRs + Jira
 - **Planning**: Mixed / Confirmatory / Autonomous
 
