@@ -1390,39 +1390,7 @@ export default function (pi: ExtensionAPI) {
     },
   });
 
-  pi.registerCommand("sprint-notes", {
-    description: "Generate sprint notes from Jira sprint tickets",
-    handler: async (args, ctx) => {
-      const project = loadProjectConfig(ctx.cwd);
-      const boardId = project?.jira?.board_id;
-      if (!boardId) {
-        ctx.ui.notify(
-          "Jira board ID not configured. Set `jira.board_id` in project.yml or run /onboard.",
-          "warning"
-        );
-        pi.sendUserMessage(
-          `/skill:sprint-notes\n\n${args?.trim() || ""}`.trim(),
-          { deliverAs: "followUp" }
-        );
-        return;
-      }
-      pi.sendUserMessage(
-        `/skill:sprint-notes\n\nBoard ID: ${boardId}. Sprint: next. ${args?.trim() || ""}`.trim(),
-        { deliverAs: "followUp" }
-      );
-    },
-  });
 
-  pi.registerCommand("release-notes", {
-    description:
-      "Generate release notes from the latest tags in configured repos",
-    handler: async (args, ctx) => {
-      pi.sendUserMessage(
-        `/skill:release-notes\n\n${args?.trim() || ""}`.trim(),
-        { deliverAs: "followUp" }
-      );
-    },
-  });
 
   pi.registerCommand("flaky-test", {
     description:
@@ -1555,14 +1523,6 @@ export default function (pi: ExtensionAPI) {
           cmd: "/learn [repo]",
           desc: "Review recent changes and update memory files",
         },
-        {
-          cmd: "/sprint-notes",
-          desc: "Generate sprint notes table from Jira for Notion",
-        },
-        {
-          cmd: "/release-notes",
-          desc: "Generate release notes from latest tags in repos",
-        },
         { cmd: "/recap", desc: "Summarize recent work sessions" },
         { cmd: "/memory", desc: "Show memory files status" },
         {
@@ -1596,17 +1556,17 @@ export default function (pi: ExtensionAPI) {
       }
 
       output += "│\n│  📊 Reporting\n";
-      for (const c of commands.slice(6, 10)) {
+      for (const c of commands.slice(6, 8)) {
         output += `│    ${c.cmd.padEnd(maxCmd + 2)}${c.desc}\n`;
       }
 
       output += "│\n│  🧠 Memory & Setup\n";
-      for (const c of commands.slice(10, 13)) {
+      for (const c of commands.slice(8, 11)) {
         output += `│    ${c.cmd.padEnd(maxCmd + 2)}${c.desc}\n`;
       }
 
       output += "│\n│  ⚙️  Configuration\n";
-      for (const c of commands.slice(13)) {
+      for (const c of commands.slice(11)) {
         output += `│    ${c.cmd.padEnd(maxCmd + 2)}${c.desc}\n`;
       }
 
