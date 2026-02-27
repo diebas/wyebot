@@ -73,6 +73,7 @@ The setup wizard walks you through:
 
 | Command | Description |
 |---------|-------------|
+| `/help` | Show all available commands grouped by category |
 | `/setup` | Guided first-time setup wizard |
 | `/onboard` | Scan repos, detect conventions, generate config and memory |
 | `/ticket [ID or desc]` | Work on a ticket — plan, implement, test, QA |
