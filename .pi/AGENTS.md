@@ -63,6 +63,9 @@ Launches multiple AI agents in parallel to review code, then consolidates findin
 ### `/qa-guide` — Generate QA Testing Guide
 Builds a step-by-step QA testing plan from Jira tickets and PRs.
 
+### `/flaky-test [test path]` — Diagnose Flaky Tests
+Reproduces intermittent test failures by running them multiple times, analyzes root causes (timing, state leakage, concurrency, random data, environment), implements a fix, and verifies stability. Works with any test framework (RSpec, Jest, pytest, Go test, etc.).
+
 ### `/browser-setup` / `/browser-reset` — Browser Automation
 Setup and manage Playwright for automated browser-based QA verification.
 

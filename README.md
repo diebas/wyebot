@@ -13,6 +13,7 @@ A project-aware AI development agent built on [Pi](https://github.com/badlogic/p
 - **Smart PR descriptions**: Generates PR descriptions from your branch diff using your repo's template
 - **QA guide generation**: Builds step-by-step QA testing guides from Jira tickets and PRs
 - **Work recaps**: Summarizes recent sessions — tickets, PRs, decisions — for standup prep
+- **Flaky test diagnosis**: Reproduces, analyzes, fixes, and verifies intermittent test failures across any framework
 - **Interactive rebase**: PR-aware rebase with conflict resolution guidance and force push safety
 - **Browser automation**: Automated browser-based QA verification using Playwright
 
@@ -82,6 +83,7 @@ The setup wizard walks you through:
 | `/sprint-notes` | Generate sprint notes from Jira |
 | `/release-notes` | Generate release notes from git tags |
 | `/recap` | Summarize recent work sessions |
+| `/flaky-test [test path]` | Diagnose and fix intermittent test failures |
 | `/rebase` | PR-aware interactive rebase |
 | `/review-me` | Multi-agent parallel code review |
 | `/qa-guide` | Generate QA testing guide from ticket/PR |
