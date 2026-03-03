@@ -1500,8 +1500,12 @@ export default function (pi: ExtensionAPI) {
           desc: "Work on a ticket — plan, implement, test, QA",
         },
         {
-          cmd: "/review-me [repo | PR-url]",
-          desc: "Multi-agent parallel code review",
+          cmd: "/parallel-review [repo | PR]",
+          desc: "Multi-model parallel code review (all models)",
+        },
+        {
+          cmd: "/parallel-review-lite [repo | PR]",
+          desc: "Multi-model parallel code review (max 3 models, faster)",
         },
         {
           cmd: "/pr-desc [repo]",
@@ -1551,22 +1555,22 @@ export default function (pi: ExtensionAPI) {
         "╭─ wyebot ─ Available Commands ─────────────────────────────────╮\n│\n";
 
       output += "│  🔧 Development\n";
-      for (const c of commands.slice(0, 6)) {
+      for (const c of commands.slice(0, 7)) {
         output += `│    ${c.cmd.padEnd(maxCmd + 2)}${c.desc}\n`;
       }
 
       output += "│\n│  📊 Reporting\n";
-      for (const c of commands.slice(6, 8)) {
+      for (const c of commands.slice(7, 9)) {
         output += `│    ${c.cmd.padEnd(maxCmd + 2)}${c.desc}\n`;
       }
 
       output += "│\n│  🧠 Memory & Setup\n";
-      for (const c of commands.slice(8, 11)) {
+      for (const c of commands.slice(9, 12)) {
         output += `│    ${c.cmd.padEnd(maxCmd + 2)}${c.desc}\n`;
       }
 
       output += "│\n│  ⚙️  Configuration\n";
-      for (const c of commands.slice(11)) {
+      for (const c of commands.slice(12)) {
         output += `│    ${c.cmd.padEnd(maxCmd + 2)}${c.desc}\n`;
       }
 

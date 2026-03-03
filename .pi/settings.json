@@ -5,7 +5,9 @@
   "extensions": [
     "./extensions/wyebot",
     "./extensions/code-review.ts",
-    "./extensions/playwright-browser.ts"
+    "./extensions/playwright-browser.ts",
+    "./extensions/multi-model-review.ts",
+    "./extensions/multi-model-review-lite.ts"
   ],
   "skills": [
     "./skills"

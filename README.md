@@ -8,7 +8,7 @@ A project-aware AI development agent built on [Pi](https://github.com/badlogic/p
 - **Persistent memory system**: Maintains project knowledge across sessions (directives, architecture, per-repo learnings)
 - **Multi-repo awareness**: Works across multiple repositories with understanding of their relationships
 - **Jira integration**: Fetch tickets and sprint data directly from Jira Cloud
-- **Code review**: Multi-agent code review that spawns parallel AI reviewers and consolidates findings by consensus
+- **Parallel code review**: Multi-model AI review that runs multiple models in parallel (Claude, GPT, Gemini, etc.) and consolidates findings by consensus — 30-60s vs minutes with traditional reviews
 - **Smart PR descriptions**: Generates PR descriptions from your branch diff using your repo's template
 - **QA guide generation**: Builds step-by-step QA testing guides from Jira tickets and PRs
 - **Work recaps**: Summarizes recent sessions — tickets, PRs, decisions — for standup prep
@@ -66,7 +66,8 @@ The setup wizard walks you through:
 /ticket PROJ-123             # Work on a Jira ticket
 /ticket Fix the login bug    # Work from a description
 /pr-desc my-app              # Generate a PR description
-/review-me                   # Multi-agent code review
+/parallel-review             # Multi-model code review
+/parallel-review-lite        # Quick review (3 models max)
 ```
 
 ## Commands
@@ -82,7 +83,8 @@ The setup wizard walks you through:
 | `/recap` | Summarize recent work sessions |
 | `/flaky-test [test path]` | Diagnose and fix intermittent test failures |
 | `/rebase` | PR-aware interactive rebase |
-| `/review-me` | Multi-agent parallel code review |
+| `/parallel-review [repo\|PR]` | Multi-model parallel review (all configured models) |
+| `/parallel-review-lite [repo\|PR]` | Quick parallel review (max 3 models, faster) |
 | `/qa-guide` | Generate QA testing guide from ticket/PR |
 | `/browser-setup` | Install Playwright for browser QA |
 | `/browser-reset` | Reset browser session |
@@ -118,25 +120,72 @@ Detailed flows for the more complex commands:
 /ticket Add password reset functionality to user settings
 ```
 
-### `/review-me`
+### `/parallel-review [repo|PR-url|ticket-id]`
 
-**Purpose**: Multi-agent parallel code review with consensus-based reporting.
+**Purpose**: Multi-model parallel code review — runs multiple AI models simultaneously and consolidates findings by consensus.
+
+**How it works**:
+- **Dynamic model selection** — Automatically uses all configured AI providers (Claude, GPT, Gemini, xAI, etc.)
+- **Parallel execution** — All models review the same diff independently (~300ms stagger to avoid conflicts)
+- **Single-shot analysis** — Each model receives the full diff and responds immediately (no tool calls), making reviews fast (15-45s per model)
+- **Consensus ranking** — Findings are grouped by similarity and ranked by `consensusScore = agents_count × severity_weight`
+- **Real-time progress** — Shows live status as each agent completes
 
 **Flow**:
-1. **Detect PR context** — Finds the PR for your current branch (uses `gh` CLI)
-2. **Fetch PR diff** — Downloads the complete changeset
-3. **Spawn parallel reviewers** — Launches 3-5 independent AI agents, each reviews the entire PR:
-   - Security reviewer
-   - Testing reviewer  
-   - Architecture reviewer
-   - Performance reviewer
-   - UX/API reviewer (if applicable)
-4. **Collect findings** — Each agent submits issues categorized by severity (critical, major, minor, suggestion)
-5. **Build consensus** — A coordinator agent consolidates findings, removes duplicates, and ranks by consensus
-6. **Generate report** — Produces markdown report grouped by file with actionable feedback
-7. **Comment on PR** — Optionally posts review to GitHub if `agent.services.comment_on_prs: true`
+1. **Interactive picker** — Choose what to review:
+   - Current branch vs base (master/main)
+   - A specific PR (by number, URL, Jira ticket ID, or branch name)
+   - Skip picker by providing: `/parallel-review https://github.com/org/repo/pull/123`
+2. **Fetch diff** — Retrieves the complete changeset
+3. **Launch parallel agents** — Spawns one agent per configured AI model:
+   - Up to 3 Claude models (Opus, Sonnet, Haiku)
+   - 1 agent per other provider (GPT, Gemini, xAI, etc.)
+   - Each reviews for: bugs, security, performance, style, best practices
+4. **Consolidate findings** — Groups similar issues by file + line + description overlap
+5. **Rank by consensus** — Issues found by multiple models rank higher than single-model findings
+6. **Generate report** — Markdown report with:
+   - Findings grouped by severity (🔴 Critical, 🟡 Warnings, 🟢 Suggestions)
+   - Consensus tags showing `[3/4 agents]` for each finding
+   - Per-agent scores (1-10) and finding counts
+   - Combined summary from all agents
 
-**Tip**: Best used when PR is ready for review but before requesting human review.
+**Example output**:
+```markdown
+### 🔴 Critical Issues — 2
+
+**[3/4 agents]** `app/controllers/orders_controller.rb:45` — **Missing authorization**
+  No authorization check before accessing sensitive order data.
+  > 💡 Add authorization check: `authorize! :manage, @order`
+
+### Scores
+| Agent              | Score | Findings |
+|--------------------|-------|----------|
+| claude-opus-4-6    | 7/10  | 8        |
+| gemini-2.5-pro     | 8/10  | 5        |
+| gpt-5.1-codex      | 6/10  | 11       |
+```
+
+**Variants**:
+- `/parallel-review` — Full review with all configured models (can be 5+ models)
+- `/parallel-review-lite` — Quick review with max 3 models (faster, cheaper)
+
+**Commands**:
+```bash
+/parallel-review                          # Interactive picker
+/parallel-review my-backend               # Jump to PR picker in that repo  
+/parallel-review 42                       # Review PR #42 (asks which repo)
+/parallel-review https://github.com/…/42  # Direct URL, skip all pickers
+/parallel-review PROJ-123                 # Find PR by Jira ticket ID
+/parallel-review-stop                     # Cancel a running review
+```
+
+**Performance**:
+- **Time per agent**: 15-45s (single API call with embedded diff)
+- **Total time**: ~30-60s (all models run in parallel)
+- **Diff size limit**: 40k chars (auto-truncates larger diffs)
+- **Timeout**: 2 minutes per agent
+
+**Tip**: Use `/parallel-review-lite` for quick checks during development. Use `/parallel-review` for final pre-merge review.
 
 ### `/onboard`
 

@@ -13,8 +13,9 @@ Perform a thorough code review on a pull request or the changes associated with 
 
 > What would you like me to review?
 >
-> 1. **A Pull Request** — provide the PR number or URL (e.g., `#42`, `https://github.com/org/repo/pull/42`)
+> 1. **A Pull Request** — provide a PR number (`42`, `#42`), URL (`https://github.com/org/repo/pull/42`), or `owner/repo#42`
 > 2. **A Jira Ticket** — provide the ticket ID (e.g., `PROJ-123`) and I'll find the associated PR(s)
+> 3. **A branch name** — provide the branch name and I'll find the associated PR
 >
 > Also, which **repo** should I look in?
 
@@ -60,13 +61,59 @@ Do NOT guess. Wait for confirmation before proceeding.
 
 #### If the user gave a Jira ticket ID:
 1. Fetch ticket details using `jira_ticket` tool.
-2. Search for associated PRs:
+2. Search for associated PRs using a **multi-strategy approach** (try each until you find results):
+
+   **Strategy 1: Filter all open PRs by branch name** (most reliable)
    ```bash
    cd <repo-dir>
+   # List all open PRs and filter by branch name starting with ticket-id (lowercase)
+   gh pr list --state open --limit 100 --json number,title,url,headRefName,baseRefName,state | \
+     jq -c '.[] | select(.headRefName | startswith("<ticket-id-lowercase>"))'
+   
+   # If empty and ticket has different case, try uppercase
+   gh pr list --state open --limit 100 --json number,title,url,headRefName,baseRefName,state | \
+     jq -c '.[] | select(.headRefName | startswith("<ticket-id-uppercase>"))'
+   ```
+   
+   **Strategy 2: Filter all open PRs by title** (if Strategy 1 returns empty)
+   ```bash
+   # Case-insensitive title search
+   gh pr list --state open --limit 100 --json number,title,url,headRefName,baseRefName,state | \
+     jq -c '.[] | select(.title | test("<ticket-id>"; "i"))'
+   ```
+   
+   **Strategy 3: GitHub's built-in search** (if Strategy 2 returns empty)
+   ```bash
+   # Sometimes GitHub's search works, sometimes it doesn't
    gh pr list --search "<ticket-id>" --json number,title,url,headRefName,baseRefName,state
    ```
-3. If multiple PRs found, ask which to review.
-4. If no PR found, ask if they want to review a branch diff instead.
+   
+   **Strategy 4: Check closed/merged PRs** (if Strategy 3 returns empty)
+   ```bash
+   # Search in ALL recent PRs (open, closed, merged) - last 200
+   gh pr list --state all --limit 200 --json number,title,url,headRefName,baseRefName,state | \
+     jq -c '.[] | select(.headRefName | startswith("<ticket-id-lowercase>")) // select(.title | test("<ticket-id>"; "i"))'
+   ```
+   
+   **After each search**: 
+   - Count results with `| jq -s 'length'` to check if strategy succeeded
+   - When a strategy succeeds, output: `✅ Found <count> PR(s) using Strategy <N>: <strategy-name>`
+   - When strategies 1-2 fail, output: `⚠️ Trying GitHub's search API...` before Strategy 3
+   - When Strategy 3 fails, output: `⚠️ Checking closed/merged PRs...` before Strategy 4
+
+3. If multiple PRs are found, list them and ask the user which one to review.
+4. If no PR is found after all strategies, inform the user with:
+   > ❌ No PR found for `<ticket-id>` in `<repo>` after searching:
+   > - ✓ Open PRs filtered by branch name (`<ticket-id>*`)
+   > - ✓ Open PRs filtered by title (case-insensitive)
+   > - ✓ GitHub search API
+   > - ✓ All recent PRs (open, closed, merged)
+   > 
+   > Would you like me to:
+   > 1. Check a different repo?
+   > 2. Search for a specific branch name?
+   > 3. Review local branch changes without a PR?
+
 5. Once a PR is identified, fetch its diff as described above.
 
 ### 📢 Progress Output: After Resolving the PR
