@@ -123,7 +123,7 @@ Si un modelo no está disponible, la extensión lo omite y continúa con los dem
 | Tiempo por agente | 15–45s |
 | Tiempo total (paralelo) | ~30–60s |
 | Diffs grandes (>40k chars) | Truncados automáticamente |
-| Timeout por agente | 120s |
+| Timeout por agente | 180s |
 
 ---
 
@@ -134,7 +134,7 @@ Editando `.pi/extensions/multi-model-review.ts`:
 - **`CLAUDE_PREFERRED`** — orden de preferencia de modelos Anthropic
 - **`EXTRA_PROVIDER_PREFERRED`** — modelo preferido por cada provider extra
 - **`LITE_MAX_MODELS`** — máximo de modelos para la versión lite (default: 3)
-- **`AGENT_TIMEOUT_MS`** — timeout por agente en ms (default: 120000)
+- **`AGENT_TIMEOUT_MS`** — timeout por agente en ms (default: 180000)
 - **`MAX_DIFF_CHARS`** — límite de caracteres del diff antes de truncar (default: 40000)
 - **`REVIEWER_SYSTEM_PROMPT`** — prompt del sistema para los revisores
 - **`SPAWN_STAGGER_MS`** — delay entre spawns para evitar colisiones (default: 300ms)

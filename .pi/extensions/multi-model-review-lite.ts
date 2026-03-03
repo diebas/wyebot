@@ -11,7 +11,7 @@ import type { Message } from "@mariozechner/pi-ai";
 import { type ExtensionAPI, type ExtensionContext } from "@mariozechner/pi-coding-agent";
 
 const SPAWN_STAGGER_MS = 300;
-const AGENT_TIMEOUT_MS = 120_000;
+const AGENT_TIMEOUT_MS = 180_000; // 3-minute hard timeout per agent
 const LOCK_RETRY_ATTEMPTS = 2;
 const LOCK_RETRY_DELAY_MS = 3000;
 const LITE_MAX_MODELS = 3;

@@ -183,7 +183,7 @@ Detailed flows for the more complex commands:
 - **Time per agent**: 15-45s (single API call with embedded diff)
 - **Total time**: ~30-60s (all models run in parallel)
 - **Diff size limit**: 40k chars (auto-truncates larger diffs)
-- **Timeout**: 2 minutes per agent
+- **Timeout**: 3 minutes per agent
 
 **Tip**: Use `/parallel-review-lite` for quick checks during development. Use `/parallel-review` for final pre-merge review.
 

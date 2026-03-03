@@ -24,7 +24,7 @@ import { type ExtensionAPI, type ExtensionContext } from "@mariozechner/pi-codin
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const SPAWN_STAGGER_MS = 300;    // fixed delay between spawns (not cumulative)
-const AGENT_TIMEOUT_MS = 120_000; // 2-minute hard timeout per agent
+const AGENT_TIMEOUT_MS = 180_000; // 3-minute hard timeout per agent
 const LOCK_RETRY_ATTEMPTS = 2;
 const LOCK_RETRY_DELAY_MS = 3000;
 const MAX_DIFF_CHARS = 40_000;   // truncate huge diffs to avoid context issues
