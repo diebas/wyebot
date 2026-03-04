@@ -111,8 +111,10 @@ Detailed flows for the more complex commands:
 7. **Add/update tests** — Creates or modifies tests to cover new functionality
 8. **Run tests** — Executes test suite if `agent.execution.run_tests: true`
 9. **Run linter** — Auto-fixes code style if `agent.execution.run_linter: true`
-10. **Update memory** — Records new patterns and learnings in memory files
-11. **Create PR** — Optionally creates PR if `agent.git.create_pr: true`
+10. **Generate QA guide** — Creates step-by-step manual testing guide with preconditions, test steps, expected results, and edge cases
+11. **Browser verification** — Executes automated QA checks in browser if Playwright is available
+12. **Update memory** — Records new patterns and learnings in memory files
+13. **Create PR** — Optionally creates PR if `agent.git.create_pr: true`
 
 **Example**:
 ```
