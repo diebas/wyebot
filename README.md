@@ -32,7 +32,17 @@ git clone <this-repo-url> my-project-agent
 cd my-project-agent
 ```
 
-### 2. Point to your repos (if they're not in this directory)
+### 2. Install extension dependencies
+
+```bash
+cd .pi/extensions/wyebot
+npm install
+cd ../../..
+```
+
+This installs the `yaml` package required by the wyebot extension.
+
+### 3. Point to your repos (if they're not in this directory)
 
 Create `.pi/local.json` (gitignored):
 
@@ -42,7 +52,7 @@ Create `.pi/local.json` (gitignored):
 }
 ```
 
-### 3. Launch and setup
+### 4. Launch and setup
 
 ```bash
 chmod +x wyebot.sh
@@ -60,7 +70,7 @@ The setup wizard walks you through:
 3. **Connect services** — Optionally connect Jira and/or GitHub
 4. **Onboard your project** — Scans your repos and configures everything
 
-### 4. Start working
+### 5. Start working
 
 ```
 /ticket PROJ-123             # Work on a Jira ticket
