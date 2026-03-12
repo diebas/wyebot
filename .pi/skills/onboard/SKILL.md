@@ -124,43 +124,21 @@ After the automated scan, ask these questions that can't be detected from code:
 > 4. Backend + Frontend + shared libs
 > 5. Other (describe)
 
-### Q3: Agent Autonomy
-If `project.yml` already has an `agent` section (e.g., from `/setup`), show the current config and ask:
-> **Agent autonomy is already configured:**
-> - Git: branches ✅, commit ❌, push ❌, PRs ❌
-> - Execution: tests ✅, linter ✅, deps ❌, migrations ❌
-> - Services: PR comments ❌, Jira ❌
->
-> **Keep this config or reconfigure?**
-
-If NOT already configured, ask:
-> **How much should the agent do on its own?**
-> 1. Conservative — I control git, agent runs tests and linter ← default
-> 2. Balanced — Agent handles branches and commits, I handle push/PRs
-> 3. Full auto — Agent handles everything including push and PRs
-> 4. Custom — Let me choose each setting
-
-For Custom, ask each category:
-- **Git**: None / Branches only / Branches + commits / Full (branches, commits, push, PRs)
-- **Execution**: Tests and linter / Tests only / Linter only / Full (+ deps + migrations) / None
-- **Services**: None / Comment on PRs / PRs + Jira
-- **Planning**: Mixed / Confirmatory / Autonomous
-
-### Q4: Protected Files
+### Q3: Protected Files
 > **Are there files the agent should NEVER modify?** (e.g., .env, secrets, CI config)
 > Enter paths separated by commas, or "none".
 
-### Q5: Additional Guardrails
+### Q4: Additional Guardrails
 > **Any other rules for the agent?** (free text, or "none")
 > Examples: "Always write tests before implementation", "Never modify the database schema directly"
 
-### Q6: Deployment
+### Q5: Deployment
 > **How do you deploy?**
 > 1. Automatic on merge to main (CI/CD)
 > 2. Manual with tags/releases
 > 3. Other: ___
 
-### Q7: PR/Merge Strategy
+### Q6: PR/Merge Strategy
 > **How do you handle PRs?**
 > 1. Squash merge
 > 2. Rebase merge
@@ -176,12 +154,12 @@ Write the `project.yml` file with all detected and user-provided information. In
 - Project name and description (from Q1)
 - All repos with their type, path, and detected stack
 - Repo structure (from Q2)
-- Detected conventions (branch format, commit format, linter command, test command, PR template path, merge strategy from Q7)
-- Deployment info (from Q6)
-- Agent config with structured autonomy (from Q3):
+- Detected conventions (branch format, commit format, linter command, test command, PR template path, merge strategy from Q6)
+- Deployment info (from Q5)
+- Agent config: If `project.yml` already has an `agent` section (e.g., from `/setup`), **preserve it as-is**. If no `agent` section exists, write conservative defaults:
   ```yaml
   agent:
-    autonomy: mixed            # planning: confirmatory | autonomous | mixed
+    autonomy: mixed
     git:
       create_branches: true
       commit: false
@@ -195,10 +173,10 @@ Write the `project.yml` file with all detected and user-provided information. In
     services:
       comment_on_prs: false
       update_jira: false
-    guardrails: []             # from Q5
-    protected_files: []        # from Q4
+    guardrails: []             # from Q4
+    protected_files: []        # from Q3
   ```
-  If `project.yml` already has an `agent` section (from `/setup`) and the user chose to keep it, preserve those values.
+  Agent autonomy is configured via `/setup`, not here. Onboard only preserves or writes defaults.
 - Jira config: leave board_id as null, suggest user fills it in if they use Jira
 
 ## Step 5: Generate `memory/DIRECTIVES.md`
@@ -221,7 +199,7 @@ Generate a DIRECTIVES.md file populated with detected conventions. Structure:
 - **Testing**: [test command]. Never [framework-specific anti-patterns detected].
 - **Code quality**: Run [linter command] after implementing.
 - **Branch format**: [detected convention]
-- **Guardrails**: [from Q3]
+- **Guardrails**: [from Q4]
 
 ## Core Principles
 
@@ -238,7 +216,7 @@ Generate a DIRECTIVES.md file populated with detected conventions. Structure:
 
 ### Commit Discipline
 [Detected commit message convention]
-[Guardrails about git operations from Q3]
+[Guardrails about git operations from project.yml agent config]
 
 ### [Repo Relationship Rules — only if multi-repo]
 [Rules based on Q2 — e.g., "parent vs fork" placement rules, shared code guidelines]
@@ -300,7 +278,7 @@ Generate an ARCHITECTURE.md file populated with detected structure. Structure:
 [Environment config patterns detected: .env, credentials, settings files]
 
 ## Deployment
-[Deployment info from Q4 and detected config files]
+[Deployment info from Q5 and detected config files]
 
 ## Discovered Patterns
 
